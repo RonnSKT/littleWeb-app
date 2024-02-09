@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calculadora de Desconto</title>
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css"
+    />
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -40,8 +44,8 @@
     }
     button {
         padding: 10px 20px;
-        background-color: #4CAF50;
-        color: white;
+        background-color: #f0c3e2;
+        color: rgb(0, 0, 0);
         border: none;
         border-radius: 5px;
         cursor: pointer;
@@ -49,7 +53,7 @@
         transition: background-color 0.3s, color 0.3s, transform 0.3s;
     }
     button:hover {
-        background-color: #45a049;
+        background-color: #dfcff3;
         transform: scale(1.05);
     }
     button:active {
@@ -109,10 +113,16 @@
         color: #ffffff;
     }
     .devolucoes-container {
+        display:block;
+        padding-left:0px;
+        padding-right:0px;
         padding: 10px;
         border: 1px solid #ccc;
         border-radius: 5px;
         margin-bottom: 15px;
+    }
+    .container #devolucoes-container .devolucao input[type=number] {
+        width:95% !important;
     }
     .devolucao {
         margin-bottom: 5px;
@@ -136,10 +146,76 @@
         background-color: #333333;
         color: #ffffff;
     }
+    /* Body */
+body{
+ background-image:url("https://wallpapercave.com/wp/wp6565470.jpg");
+ backdrop-filter:blur(2.67px);
+ min-height:100vh;
+ max-height:100vh;
+ min-width:100vw;
+ max-width:0vw;
+ background-size:contain;
+ background-attachment:scroll;
+ background-position-x:10%;
+ margin-left:0px;
+ margin-top:0px;
+ margin-bottom:0px;
+ margin-right:0px;
+}
+
+/* Container */
+.container{
+ transform:translatex(0px) translatey(0px);
+ border-top-left-radius:50px;
+ border-top-right-radius:20px;
+ border-bottom-left-radius:0px;
+ border-bottom-right-radius:50px;
+}
+
+/* Valor original */
+#valor-original{
+ width:27% !important;
+}
+
+/* Percentual desconto */
+#percentual-desconto{
+ width:20% !important;
+}
+
+/* Span Tag */
+.container .switch span{
+    transform:translatex(354px) translatey(-15px);
+ border-top-left-radius:20px;
+ border-top-right-radius:20px;
+ border-bottom-left-radius:20px;
+ border-bottom-right-radius:20px;
+}
+@media (max-width:576px){
+
+/* Container */
+.container{
+ display:block;
+ float:left;
+}
+
+/* Span Tag */
+.container .switch span{
+ display:block;
+ flex-direction:row;
+ transform: translatex(241px) translatey(-14px);
+}
+
+}
+
+
 </style>
 </head>
 <body>
 <div class="container">
+    <label class="switch">
+        <input type="checkbox" onclick="toggleDarkMode()">
+        <span class="slider"></span>
+    </label>
     <h2>Calculadora de Desconto</h2>
     <div class="input-group">
         <label for="valor-original">Valor Original:</label>
@@ -177,10 +253,6 @@
     </div>
     <div class="devolucoes-container" id="devolucoes-container"></div>
     <button onclick="calcularDesconto()">Calcular</button>
-    <label class="switch">
-        <input type="checkbox" onclick="toggleDarkMode()">
-        <span class="slider"></span>
-    </label>
     <div id="resultado" class="result-container">
         <h3>Resultado</h3>
         <div id="resultado-text"></div>
