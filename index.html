@@ -151,8 +151,29 @@
     </div>
     <div class="input-group">
         <label for="num-devolucoes">Número de Devoluções:</label>
-        <input type="range" id="num-devolucoes" min="0" max="20">
-        <span id="num-devolucoes-label">0</span>
+        <select id="num-devolucoes">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13">13</option>
+            <option value="14">14</option>
+            <option value="15">15</option>
+            <option value="16">16</option>
+            <option value="17">17</option>
+            <option value="18">18</option>
+            <option value="19">19</option>
+            <option value="20">20</option>
+        </select>
     </div>
     <div class="devolucoes-container" id="devolucoes-container"></div>
     <button onclick="calcularDesconto()">Calcular</button>
@@ -169,8 +190,7 @@
 <script>
     let devolucoes = [];
 
-    document.getElementById('num-devolucoes').addEventListener('input', function() {
-        document.getElementById('num-devolucoes-label').textContent = this.value;
+    document.getElementById('num-devolucoes').addEventListener('change', function() {
         atualizarDevolucoes();
     });
 
@@ -190,8 +210,6 @@
     }
 
     function calcularDesconto() {
-        atualizarDevolucoes();
-        
         const valorOriginal = parseFloat(document.getElementById('valor-original').value);
         const percentualDesconto = parseFloat(document.getElementById('percentual-desconto').value);
 
@@ -214,10 +232,25 @@
 
     function toggleDarkMode() {
         const body = document.body;
-        body.classList.toggle('dark-mode');
         const container = document.querySelector('.container');
+        const darkModeSwitch = document.querySelector('.switch input[type="checkbox"]');
+        body.classList.toggle('dark-mode');
         container.classList.toggle('dark-mode');
+        darkModeSwitch.checked = body.classList.contains('dark-mode');
+        // Salvar a configuração do modo escuro em um cookie
+        document.cookie = `darkMode=${darkModeSwitch.checked}; expires=Fri, 31 Dec 9999 23:59:59 GMT;`;
     }
+
+    // Verificar o estado do modo escuro ao carregar a página
+    window.onload = function() {
+        const darkModeSwitch = document.querySelector('.switch input[type="checkbox"]');
+        const darkMode = document.cookie.split('; ').find(row => row.startsWith('darkMode=')).split('=')[1];
+        if (darkMode) {
+            darkModeSwitch.checked = darkMode === 'true';
+            toggleDarkMode();
+        }
+        atualizarDevolucoes();
+    };
 </script>
 </body>
 </html>
