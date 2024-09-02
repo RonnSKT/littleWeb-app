@@ -168,13 +168,15 @@
         function processValues() {
             const selectedColumn = document.getElementById('columnSelect').value;
             const filterColumn = document.getElementById('filterColumnSelect').value;
-            const filterValue = document.getElementById('filterValue').value;
+            let filterValue = document.getElementById('filterValue').value.replace(/\s+/g, ''); // Remover todos os espaços do filtro
 
             if (selectedColumn && filterColumn && filterValue) {
                 let totalSum = 0.0;
                 fileData.forEach(row => {
-                    if (row[filterColumn] == filterValue) {
-                        totalSum += parseFloat(row[selectedColumn]);
+                    // Remover todos os espaços do valor da coluna de filtro antes da comparação
+                    const cellValue = row[filterColumn] ? row[filterColumn].toString().replace(/\s+/g, '') : '';
+                    if (cellValue === filterValue) {
+                        totalSum += parseFloat(row[selectedColumn]) || 0;
                     }
                 });
 
@@ -187,6 +189,7 @@
                 showModal('Por favor, selecione ambas as colunas e insira o valor do filtro.');
             }
         }
+
 
         function logAction(col, filterCol, filterVal, totalSum, totalAccumulated) {
             const timestamp = new Date().toLocaleString();
