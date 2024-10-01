@@ -194,8 +194,15 @@
                     const cellValue = row[filterColumn] ? row[filterColumn].toString().replace(/\s+/g, '') : '';
 
                     if (cellValue === filterValue) {
-                        let cellValueToSum = parseFloat(row[selectedColumn]);
-
+                        let cellValueToSum = row[selectedColumn].toString();
+            
+                        // Check if the number uses period as thousands separator
+                        if (cellValueToSum.indexOf('.') !== -1 && cellValueToSum.indexOf(',') !== -1 && cellValueToSum.indexOf('.') < cellValueToSum.indexOf(',')) {
+                            cellValueToSum = parseFloat(cellValueToSum.replace(/\./g, '').replace(/,/g, '.'));
+                        } else { // Assume it's a normal comma-separated decimal
+                            cellValueToSum = parseFloat(cellValueToSum.replace(/,/g, '.'));
+                        }
+            
                         // Verificação se o valor é NaN ou inválido
                         if (!isNaN(cellValueToSum)) {
                             totalSum += cellValueToSum;
