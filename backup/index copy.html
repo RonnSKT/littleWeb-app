@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XLSX Utils</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #f39c12;
+            margin-bottom: 20px;
+        }
+
+        .result {
+            text-align: center;
+            font-size: 18px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .log-console {
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .license {
+            text-align: center;
+            font-size: 12px;
+            padding: 10px;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: black;
+            color: #ecf0f1;
+        }
+
+        .dark-mode .form-control {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+
+        .dark-mode .form-select {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+
+        .dark-mode .log-console {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+    </style>
+</head>
+<body data-bs-theme="dark">
+    <div class="container">
+        <div class="title">• XLSX Utils •</div>
+
+        <input type="file" id="fileInput" accept=".xlsx" style="display: none;">
+        <button class="btn btn-primary btn-lg btn-block" onclick="document.getElementById('fileInput').click()">Importar Arquivo XLSX</button>
+
+        <div class="form-group mt-3">
+            <label for="columnSelect">Coluna para Somar:</label>
+            <select class="form-select" id="columnSelect"></select>
+        </div>
+        
+        <div class="form-group mt-3">
+            <label for="filterColumnSelect">Coluna para Filtrar:</label>
+            <select class="form-select" id="filterColumnSelect"></select>
+        </div>
+        
+        <div class="form-group mt-3">
+            <label for="filterValue">Valor do Filtro:</label>
+            <input type="text" class="form-control" id="filterValue" placeholder="Valor do Filtro">
+        </div>
+        
+        <button class="btn btn-primary btn-lg btn-block mt-3" onclick="processValues()">Processar Valores</button>
+        <button class="btn btn-success btn-lg btn-block mt-3" onclick="copySum()">Copiar Soma Acumulada</button>
+        <button class="btn btn-danger btn-lg btn-block mt-3" onclick="clearSession()">Limpar Sessão</button>
+        
+        <div class="result border rounded-3" id="resultLabel">Soma Atual: <br> Soma Acumulada: </div>
+
+        <div class="log-console mt-3 border border-secondary rounded-5" id="logConsole"></div>
+
+        <div class="footer">© 2024 Roniel Gomes. Todos os direitos reservados.</div>
+        <div class="license">• Uso exclusivo de Leticía Cardoso •</div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="alertModalLabel">Alerta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="alertModalBody">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let fileData = null;
+        let summedValue = 0.0;
+
+        window.onload = function() {
+            const previousSession = localStorage.getItem('xlsxSessionData');
+            if (previousSession) {
+                const sessionData = JSON.parse(previousSession);
+                const continueSession = confirm('Você tem uma sessão anterior salva. Deseja continuar essa sessão?');
+                if (continueSession) {
+                    summedValue = sessionData.summedValue;
+                    document.getElementById('logConsole').innerHTML = sessionData.logConsole;
+                    updateResultLabel();
+                } else {
+                    clearSession();
+                }
+            }
+        };
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const data = e.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                fileData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                populateColumnSelects();
+            };
+
+            reader.readAsBinaryString(file);
+        });
+
+        function populateColumnSelects() {
+            const columnSelect = document.getElementById('columnSelect');
+            const filterColumnSelect = document.getElementById('filterColumnSelect');
+            columnSelect.innerHTML = '';
+            filterColumnSelect.innerHTML = '';
+
+            const columns = Object.keys(fileData[0]);
+            columns.forEach(column => {
+                const option = document.createElement('option');
+                option.value = column;
+                option.text = column;
+                columnSelect.appendChild(option.cloneNode(true));
+                filterColumnSelect.appendChild(option);
+            });
+
+            if (columns.includes("Valor original")) {
+                columnSelect.value = "Valor original";
+            }
+            if (columns.includes("SS")) {
+                filterColumnSelect.value = "SS";
+            }
+        }
+
+        function processValues() {
+            const selectedColumn = document.getElementById('columnSelect').value;
+            const filterColumn = document.getElementById('filterColumnSelect').value;
+            let filterValue = document.getElementById('filterValue').value.replace(/\s+/g, ''); // Remover todos os espaços do filtro
+
+            if (selectedColumn && filterColumn && filterValue) {
+                let totalSum = 0.0;
+                fileData.forEach(row => {
+
+                    const cellValue = row[filterColumn] ? row[filterColumn].toString().replace(/\s+/g, '') : '';
+
+                    if (cellValue === filterValue) {
+                        let cellValueToSum = row[selectedColumn].toString();
+                        if (cellValueToSum.indexOf('.') !== -1 && cellValueToSum.indexOf(',') !== -1 && cellValueToSum.indexOf('.') < cellValueToSum.indexOf(',')) {
+                            cellValueToSum = parseFloat(cellValueToSum.replace(/\./g, '').replace(/,/g, '.'));
+                        } else {
+                            cellValueToSum = parseFloat(cellValueToSum.replace(/,/g, '.'));
+                        }
+                        if (!isNaN(cellValueToSum)) {
+                            totalSum += cellValueToSum;
+                        }
+                    }
+                });
+
+                summedValue += totalSum;
+                updateResultLabel();
+                logAction(selectedColumn, filterColumn, filterValue, totalSum);
+                saveSession();
+            } else {
+                showModal('Por favor, selecione ambas as colunas e insira o valor do filtro.');
+            }
+        }
+
+        function updateResultLabel() {
+            const formattedTotalSum = `R$ ${summedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('resultLabel').innerHTML = `Soma Atual: <br>Soma Acumulada: <span style='font-size: 20px; color: #e74c3c;'>${formattedTotalSum}</span>`;
+        }
+
+        function logAction(col, filterCol, filterVal, totalSum) {
+            const timestamp = new Date().toLocaleString();
+            const formattedSum = `R$ ${totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const logEntry = `<span style="color: #999999;">${timestamp}</span> | 
+                               <span style="color: #f39c12;">Coluna Somada: ${col}</span> | 
+                               <span style="color: #27ae60;">Filtro: ${filterCol} = ${filterVal}</span> | 
+                               <span style="color: #F3C2D5;">Soma: ${formattedSum}</span> | 
+                               <span style="color: #F3C2D5;">Total Acumulado: R$ ${summedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span><br>`;
+            document.getElementById('logConsole').innerHTML += logEntry;
+        }
+
+        function saveSession() {
+            const sessionData = {
+                summedValue: summedValue,
+                logConsole: document.getElementById('logConsole').innerHTML
+            };
+            localStorage.setItem('xlsxSessionData', JSON.stringify(sessionData));
+        }
+
+        function clearSession() {
+            summedValue = 0.0;
+            document.getElementById('logConsole').innerHTML = '';
+            updateResultLabel();
+            localStorage.removeItem('xlsxSessionData');
+            showModal('Sessão limpa. Você pode começar uma nova sessão agora.');
+        }
+
+        function copySum() {
+            navigator.clipboard.writeText(summedValue.toFixed(2));
+            showModal('Soma acumulada copiada para a área de transferência!');
+        }
+
+        // Show Bootstrap Modal
+        function showModal(message) {
+            const modalBody = document.getElementById('alertModalBody');
+            modalBody.innerText = message;
+            const alertModal = new bootstrap.Modal(document.getElementById('alertModal'));
+            alertModal.show();
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</body>
+</html>
